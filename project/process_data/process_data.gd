@@ -19,9 +19,11 @@ signal generated_cross_word
 #  [CONSTANTS]
 const V_SCORE = 1.0
 const H_SCORE = 0.8
+const V_BOUNDRY = 30
+const H_BOUNDRY = 20
 const LOAD_TIME = 1000 # tempo em milisegundos
 const SPECIAL_CHAR_DICIO = {'Á': 'A', 'À': 'A', 'Ã': 'A', 'Â': 'A', 'É': 'E', 'È': 'E', 'Ẽ': 'E', 'Ê': 'E', 'Í': 'I', 'Ì': 'I', 'Ĩ': 'I', 'Î': 'I', 'Ó': 'O', 'Ò': 'O', 'Õ': 'O', 'Ô': 'O', 'Ú': 'U', 'Ù': 'U', 'Ũ': 'U', 'Û': 'U', 'Ç': 'C', 'Ñ': 'N', '': ' ', ' ': ' '}
-
+const ALL_CHAR = ["ABCDEFGHIJKLMNOPQRSTUVWXYZ ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜ"]
 #const GLOSSARY_PATH = "res://process_data/glossario_acentuacao.json"
 
 #  [EXPORTED_VARIABLES]
@@ -34,8 +36,14 @@ const SPECIAL_CHAR_DICIO = {'Á': 'A', 'À': 'A', 'Ã': 'A', 'Â': 'A', 'É': 'E
 var _words: Dictionary = Dictionary() \
 		setget set_words, get_words
 
+var _size_x
+var _size_y
+
 var _game_data = {}
 var _special_char = {}
+var _char_frequency = {}
+var _game_char_array = []
+var _word_search_table = {}
 
 var _game_contains = []
 var _keyset = []
@@ -57,6 +65,10 @@ func _ready() -> void:
 	_gen_cross_word()
 	_gen_keyset(16)
 	_global_keyset()
+	
+	_gen_word_search()
+	
+	
 #	print("vish")
 #	Api.connect("request_completed", self, "_start_process")
 	
@@ -71,6 +83,8 @@ func reset() -> void:
 	_gen_cross_word()
 	_gen_keyset(16)
 	_global_keyset()
+	
+	_gen_word_search()
 
 func start_process() -> void:
 #	seed(OS.get_unix_time())
@@ -107,6 +121,12 @@ func set_words(words: Dictionary) ->void:
 								"value": words[i]["clue"]}
 	emit_signal("game_data_loaded")
 
+func get_size() -> Array:
+	return [_size_x, _size_y]
+
+func get_word_search() -> Dictionary:
+	return _word_search_table
+
 #  [PRIVATE_METHODS]
 #func _gen_special_char_dicio() -> void:
 #	var glossary = File.new()
@@ -115,6 +135,183 @@ func set_words(words: Dictionary) ->void:
 #	for i in output:
 #		for j in output[i]:
 #			_special_char[j] = i
+
+func _gen_word_search() -> void:
+	yield(self, "game_data_loaded")
+	_populate_dict_frequency()
+	_calculate_frequency()
+#	print(_words)
+	var best_word_search = _word_search_game_gen(_words)
+	var game_table = _word_search_game_table(best_word_search)
+	game_table = _expand_table(game_table)
+	_word_search_table = game_table
+#	printt(_size_x, _size_y, len(game_table))
+#	printt(_graph_score(best_word_search), best_word_search)
+#	printt(_graph_score(best_word_search), game_table)
+#	var entry = _word_search_entry(_words)
+#	var score = _graph_score(entry)
+#	printt(score, entry)
+
+func _expand_table(graph: Dictionary) -> Dictionary:
+	var ratio = float(_size_x)/float(_size_y)
+	if ratio > 4.0/3.0:
+		return _expand_table_vertical(graph)
+	elif ratio < 4.0/3.0:
+		return _expand_table_horizontal(graph)
+	return graph
+
+func _expand_table_horizontal(graph: Dictionary) -> Dictionary:
+#	print("Cresce horizontal")
+	var ratio: float = float(_size_x)/float(_size_y)
+	var lenletters : int = len(_game_char_array)
+	if ratio < 4.0/3.0:
+		_size_x += 1
+		for i in range(_size_y+1):
+			var pos_str : String = str(Vector2(_size_x, i))
+			var rand_letter : int = randi()%lenletters
+			graph[pos_str] = _game_char_array[rand_letter]
+		return _expand_table_horizontal(graph)
+	else:
+		return graph
+	
+func _expand_table_vertical(graph: Dictionary) -> Dictionary:
+#	print("Cresce vertical")
+	var ratio: float = float(_size_x)/float(_size_y)
+	var lenletters : int = len(_game_char_array)
+	if ratio > 4.0/3.0:
+		_size_y += 1
+		for i in range(_size_x+1):
+			var pos_str : String = str(Vector2(i, _size_y))
+			var rand_letter : int = randi()%lenletters
+			graph[pos_str] = _game_char_array[rand_letter]
+		return _expand_table_vertical(graph)
+	else:
+		return graph
+
+
+func _populate_dict_frequency() -> void:
+	for i in ALL_CHAR:
+		_char_frequency[i] = 0
+
+func _calculate_frequency() -> void: #necessário para não adicionar letras que ajudem muito
+	_game_char_array = []
+	for i in _words:
+		for j in i:
+			_game_char_array.append(j)
+
+func _word_search_game_gen(words: Dictionary) -> Dictionary:
+	
+	var actual_time = OS.get_ticks_msec()
+	var best_graph = _word_search_entry(words.duplicate(true))
+	var best_score = _graph_score(best_graph)
+	var start_time = OS.get_ticks_msec()
+	while not (actual_time > start_time + LOAD_TIME):
+#	while not (actual_time > start_time + LOAD_TIME and best_validate):
+		actual_time = OS.get_ticks_msec()
+		var new_entry = _word_search_entry(words.duplicate(true))
+		var new_score = _graph_score(new_entry)
+		
+		if (best_score > new_score):
+			best_graph = new_entry
+			best_score = new_score
+#	print(best_graph)
+	return best_graph
+	
+func _word_search_game_table(words: Dictionary) -> Dictionary:
+	var output : Dictionary = {}
+	var x_max : int = 0
+	var y_max : int = 0
+	for i in words:
+		var pos : Vector2 = words[i]["position"]
+		var dir : Vector2 = words[i]["direction"]
+		for j in range(len(i)):
+			var pos_act : Vector2 = pos + dir*j
+			var pos_str : String = str(pos_act)
+			if (x_max < pos_act.x):
+				x_max = int(pos_act.x)
+			if (y_max < pos_act.y):
+				y_max = int(pos_act.y)
+			output[pos_str] = i[j]
+	
+	_size_x = x_max
+	_size_y = y_max
+#	printt (x_max, y_max)
+	var lenletters : int = len(_game_char_array)
+	for i in range(x_max+1):
+		for j in range(y_max+1):
+			var pos_str : String = str(Vector2(i,j))
+			var pos_char: int = randi()%lenletters
+			if not pos_str in output:
+				output[pos_str] = _game_char_array[pos_char]
+	return output
+	
+func _word_search_entry(words: Dictionary) -> Dictionary:
+	var output : Dictionary = {}
+	var support: Dictionary = {}
+	for i in words:
+#		print(i)
+		var new_posdir: Array = _rand_valid_pos(i, support)
+#		print(new_posdir)
+		var pos: Vector2 = new_posdir[0]
+		var dir: Vector2 = new_posdir[1]
+		for j in range(len(i)):
+			var pos_i: Vector2 = pos + j*dir
+			support[str(pos_i)] = i[j]
+		
+		output[i] = {
+			"key":words[i].key,
+			"value":words[i].value,
+			"position":pos,
+			"direction":dir
+		}
+		
+	return output
+#	return support
+
+func _rand_valid_pos(word: String, graph: Dictionary) -> Array:
+	var output_pos : Vector2 = Vector2.ZERO
+	var output_dir : Vector2 = Vector2.ZERO
+	
+	var dir: int = randi()%2
+#	print(dir)
+	if dir == 0:
+		output_dir = Vector2.DOWN
+	else:
+		output_dir = Vector2.RIGHT
+	
+	var pos_x: int = randi()%H_BOUNDRY
+	var pos_y: int = randi()%V_BOUNDRY
+	var valid: bool = true
+	output_pos.x = pos_x
+	output_pos.y = pos_y
+	for i in range(len(word)):
+		var pos_i: Vector2 = output_pos + i*output_dir
+		valid = valid and _valid_pos(pos_i, word[i], graph)
+	
+	if valid:
+		return [output_pos, output_dir]
+	else:
+		return _rand_valid_pos(word, graph)
+
+
+func _valid_pos(pos:Vector2, letter:String, graph:Dictionary) -> bool:
+	var str_pos: String = str(pos)
+	if pos.x > H_BOUNDRY:
+		return false
+	elif pos.y > V_BOUNDRY:
+		return false
+	elif str_pos in graph:
+		if graph[str_pos] == letter:
+			return true
+		else:
+			return false
+	else:
+		return true
+
+#func _word_search_score(graph: Dictionary) -> float:
+#	return 0.0
+
+
 
 func _parse_game_data(raw_data:Array) -> void:
 	for i in raw_data:

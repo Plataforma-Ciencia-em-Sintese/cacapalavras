@@ -131,6 +131,12 @@ func is_all_request_completed() -> bool:
 func get_game() -> Dictionary:
 	return process_data.get_game()
 
+func get_word_search() -> Dictionary:
+	return process_data.get_word_search()
+
+func get_words() -> Dictionary:
+	return process_data.get_words()
+
 func get_keyset() -> Array:
 	return process_data.get_keyset()
 
