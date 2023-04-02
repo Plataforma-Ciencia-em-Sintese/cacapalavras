@@ -35,6 +35,9 @@ var _number_labels = {}
 var _numbered_clues = {}
 var _tips = 10
 
+var _pos_x : int
+var _pos_y : int
+
 var _allowed_keys := []
 var _special_char_dicio := {}
 
@@ -74,11 +77,13 @@ func _ready() -> void:
 #	print(_allowed_keys)
 	_read_data()
 #	printt(_sizeX, _sizeY)
-	_adjust_size()
+#	_adjust_size()
 #	printt(_sizeX, _sizeY)
+	
+	
 	_populate_table()
-	_populate_solved_dict()
-	_verify_endgame()
+#	_populate_solved_dict()
+#	_verify_endgame()
 
 func _input(event):
 #	print(event)
@@ -345,61 +350,92 @@ func _verify_owner(button: Button) -> Dictionary:
 			return _game_buttons[i]
 	return {}
 
+func _str2vec2(input: String) -> Vector2:
+	var output : Vector2 = Vector2.ZERO
+	var copy_i : String = input.trim_prefix("(")
+	copy_i = copy_i.trim_suffix(")")
+	output.x = int(copy_i.split(",")[0])
+	output.y = int(copy_i.split(",")[1])
+	return output
 
 func _read_data() -> void:
-	var game_data = API.get_game()
-#	print(game_data)
-	var size := Vector2.ZERO
-	var iteration = 1
-	for i in game_data:
-		var position = game_data[i]["position"] + game_data[i]["direction"]*(len(i))
-		if position.x > size.x:
-			size.x = position.x
-		if position.y > size.y:
-			size.y = position.y
-			
-		var label_position = str(game_data[i]["position"] - game_data[i]["direction"])
-#		var label_position = str(game_data[i]["position"])
-		var label = Label.new()
-		label.text = str(iteration)
-		label.align = Label.ALIGN_CENTER
-		label.valign = Label.VALIGN_CENTER
-		label.set_v_size_flags(3)
-#		print(label_position)
-		_number_labels[label_position] = {"label": label}
-		_numbered_clues[str(iteration)] = {}
-		_numbered_clues[str(iteration)]["clue"] = game_data[i]["clue"]
-		_numbered_clues[str(iteration)]["horizontal"] = game_data[i]["horizontal"]
-		_numbered_clues[str(iteration)]["buttons"] = []
-		for j in range(len(i)):
-			var button_position = str(game_data[i]["position"] + game_data[i]["direction"]*j)
-			if not button_position in _game_buttons:
-				var button = Button.new()
-				button.toggle_mode = true
-				_game_buttons[button_position] = {"solution": i[j],
-												"affiliation": [str(iteration)],
-												"button": button,
-												"solved": false,
-												"position": game_data[i]["position"] + game_data[i]["direction"]*j,
-												"value": "",
-												"keyboard": game_data[i]["keyboard"][j]}
-			else:
-				_game_buttons[button_position]["affiliation"].append(str(iteration))
-			
-			#tratar espacos
-			if (i[j] == " "):
-#				print("botão vazio")
-				_game_buttons[button_position]["solved"] = true
-				_game_buttons[button_position]["button"].text = " "
-				_game_buttons[button_position]["button"].disabled = true
-			
-			_numbered_clues[str(iteration)]["buttons"].append(_game_buttons[button_position])
-		iteration += 1
+#	var game_data = API.get_game()
+	var words = API.get_words()
+	var game_table = API.get_word_search()
 	
-#	print(_numbered_clues)
+	_sizeX = 0
+	_sizeY = 0
 	
-	_sizeX = size.x
-	_sizeY = size.y
+	for i in game_table:
+		var letter: String = game_table[i]
+		var button: Button = Button.new()
+		var pos   : Vector2 = _str2vec2(i)
+		
+		button.name = i
+		button.text = letter
+		
+		_game_buttons[i] ={
+			"letter": letter,
+			"button": button,
+			"position": pos, #importante para encontrar os botoes adjacentes
+		}
+		
+		if pos.x > _sizeX:
+			_sizeX = pos.x
+		if pos.y > _sizeY:
+			_sizeY = pos.y
+	
+#	var size := Vector2.ZERO
+#	var iteration = 1
+#	for i in game_data:
+#		var position = game_data[i]["position"] + game_data[i]["direction"]*(len(i))
+#		if position.x > size.x:
+#			size.x = position.x
+#		if position.y > size.y:
+#			size.y = position.y
+#
+#		var label_position = str(game_data[i]["position"] - game_data[i]["direction"])
+##		var label_position = str(game_data[i]["position"])
+#		var label = Label.new()
+#		label.text = str(iteration)
+#		label.align = Label.ALIGN_CENTER
+#		label.valign = Label.VALIGN_CENTER
+#		label.set_v_size_flags(3)
+##		print(label_position)
+#		_number_labels[label_position] = {"label": label}
+#		_numbered_clues[str(iteration)] = {}
+#		_numbered_clues[str(iteration)]["clue"] = game_data[i]["clue"]
+#		_numbered_clues[str(iteration)]["horizontal"] = game_data[i]["horizontal"]
+#		_numbered_clues[str(iteration)]["buttons"] = []
+#		for j in range(len(i)):
+#			var button_position = str(game_data[i]["position"] + game_data[i]["direction"]*j)
+#			if not button_position in _game_buttons:
+#				var button = Button.new()
+#				button.toggle_mode = true
+#				_game_buttons[button_position] = {"solution": i[j],
+#												"affiliation": [str(iteration)],
+#												"button": button,
+#												"solved": false,
+#												"position": game_data[i]["position"] + game_data[i]["direction"]*j,
+#												"value": "",
+#												"keyboard": game_data[i]["keyboard"][j]}
+#			else:
+#				_game_buttons[button_position]["affiliation"].append(str(iteration))
+#
+#			#tratar espacos
+#			if (i[j] == " "):
+##				print("botão vazio")
+#				_game_buttons[button_position]["solved"] = true
+#				_game_buttons[button_position]["button"].text = " "
+#				_game_buttons[button_position]["button"].disabled = true
+#
+#			_numbered_clues[str(iteration)]["buttons"].append(_game_buttons[button_position])
+#		iteration += 1
+#
+##	print(_numbered_clues)
+#
+#	_sizeX = size.x
+#	_sizeY = size.y
 	
 func _adjust_size() -> void:
 	if _sizeY*RATIO > _sizeX+1:
@@ -423,23 +459,29 @@ func _populate_solved_dict() -> void:
 		_solved_itens[i] = false
 
 func _populate_table() -> void:
-	print()
+#	print()
+	_sizeX += 1
+	_sizeY += 1
 	_gameTable.columns = _sizeX
+	printt(_sizeX, _sizeY, _sizeX*_sizeY)
 	for i in range(_sizeY):
 		for j in range(_sizeX):
 			var newAspect = AspectRatioContainer.new()
 			newAspect.set_h_size_flags(3)
 			newAspect.set_v_size_flags(3)
 			_gameTable.add_child(newAspect)
-			var position = "(%d, %d)"%[j, i]
-			if (position in _number_labels):
-#				print(position)
-				newAspect.add_child(_number_labels[position]["label"])
-			elif (position in _game_buttons):
-				newAspect.add_child(_game_buttons[position]["button"])
-			else:
-				var newPanel = Panel.new()
-				newAspect.add_child(newPanel)
+#			var position = "(%d, %d)"%[j, i]
+			var position : String = str(Vector2(j, i))
+#			print(position)
+			newAspect.add_child(_game_buttons[position]["button"])
+#			if (position in _number_labels):
+##				print(position)
+#				newAspect.add_child(_number_labels[position]["label"])
+#			elif (position in _game_buttons):
+#				newAspect.add_child(_game_buttons[position]["button"])
+#			else:
+#				var newPanel = Panel.new()
+#				newAspect.add_child(newPanel)
 
 func _mount_special_char() -> void: #O navegador nao vai encontrar esse arquivo
 	var glossary = File.new()

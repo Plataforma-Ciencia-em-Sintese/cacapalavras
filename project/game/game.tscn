@@ -452,6 +452,7 @@ bbcode_text = "[b][color=#000000]Lorem ipsum praesent condimentum donec vehicula
 text = "Lorem ipsum praesent condimentum donec vehicula lectus netus, auctor himenaeos platea duis molestie justo, vivamus mi semper fringilla imperdiet amet aptent, pretium malesuada sagittis mi duis. pharetra ut vivamus augue cursus lobortis luctus class, augue congue dolor aliquam adipiscing elit, mollis donec cursus fusce vel potenti. etiam quisque fusce porttitor non quisque pulvinar curae mauris turpis ipsum, ut fusce porta non himenaeos etiam semper aenean ligula mi, eleifend non turpis lorem libero vel pulvinar lacinia integer. porttitor massa mauris senectus facilisis fusce porta quisque amet congue, dolor hac scelerisque vel commodo mi pharetra sed quisque ac, pretium class arcu aenean dapibus fames faucibus litora. "
 
 [node name="AspectRatioContainer" type="AspectRatioContainer" parent="AspectRatioContainer/Separador/Panel"]
+visible = false
 anchor_left = 0.00625
 anchor_top = 0.55787
 anchor_right = 0.180114
@@ -491,6 +492,7 @@ valign = 1
 clip_text = true
 
 [node name="Keyboard" parent="AspectRatioContainer/Separador/Panel" instance=ExtResource( 9 )]
+visible = false
 anchor_left = 0.194886
 anchor_top = 0.587963
 anchor_right = 0.344318
