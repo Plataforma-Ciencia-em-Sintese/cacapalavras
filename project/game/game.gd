@@ -35,6 +35,9 @@ var _number_labels = {}
 var _numbered_clues = {}
 var _tips = 10
 
+var _clues: Dictionary = {}
+var _display: String = ""
+
 var _pos_x : int
 var _pos_y : int
 
@@ -82,6 +85,13 @@ func _ready() -> void:
 	
 	
 	_populate_table()
+	
+#	for i in _solved_itens: ##Verifica a formatacao das dicas
+#		var al = randi()%2
+#		if al == 0:
+#			_solved_itens[i] = true
+	
+	_process_clues()
 #	_populate_solved_dict()
 #	_verify_endgame()
 
@@ -206,7 +216,35 @@ func _override_theme() -> void:
 	box.border_color = API.theme.get_color(API.theme.PD2)
 #	printt(default, number, clue)
 	
-	
+
+func _process_clues() -> void:
+	var words : Dictionary = API.get_words()
+	var display_text = ""
+	for i in words:
+#		print(words[i])
+		if _solved_itens[i]:
+			display_text = _place_solved_question(words[i], display_text)
+		else:
+			display_text = _place_unsolved_question(words[i], display_text)
+	_clue.bbcode_text = display_text
+
+func _place_solved_question(entry: Dictionary, text: String) -> String:
+	var color_1: Color = API.theme.get_color(API.theme.PB)
+	color_1.a = 0.35
+	var color_2: Color = API.theme.get_color(API.theme.GREEN)
+	var color_3: Color = API.theme.get_color(API.theme.BLACK)
+	color_3.a = 0.35
+	var out_entry = "[color=#%s]%s[/color]\n[b][color=#%s]%d letras[/color]\t[color=#%s]%s[/color][/b]\n\n" % [color_3.to_html(), entry["value"], color_1.to_html(), len(entry["key"]), color_2.to_html(), entry["key"]]
+	var output = str(text, out_entry)
+	return output
+
+func _place_unsolved_question(entry: Dictionary, text: String) -> String:
+	var color_1: Color = API.theme.get_color(API.theme.PB)
+	var color_3: Color = API.theme.get_color(API.theme.BLACK)
+#	print(color_1.to_html())
+	var out_entry = "[color=#%s]%s[/color]\n[color=#%s][b]%d letras[/b][/color]\n\n" % [color_3.to_html(), entry["value"], color_1.to_html(), len(entry["key"])]
+	var output = str(text, out_entry)
+	return output
 
 func _verify_solution() -> void:
 #	print(_solved_itens)
@@ -227,8 +265,8 @@ func _verify_solution() -> void:
 
 func _verify_endgame() -> void:
 	var endgame = true
-	for i in _game_buttons:
-		endgame = endgame and _game_buttons[i]["button"].disabled
+	for i in _solved_itens:
+		endgame = endgame and _solved_itens[i]
 	if endgame:
 #		$gameOver.show()
 		$PanelInformation.show()
@@ -385,6 +423,9 @@ func _read_data() -> void:
 		if pos.y > _sizeY:
 			_sizeY = pos.y
 	
+	for i in words:
+		_solved_itens[i] = false
+	
 #	var size := Vector2.ZERO
 #	var iteration = 1
 #	for i in game_data:
@@ -463,7 +504,7 @@ func _populate_table() -> void:
 	_sizeX += 1
 	_sizeY += 1
 	_gameTable.columns = _sizeX
-	printt(_sizeX, _sizeY, _sizeX*_sizeY)
+#	printt(_sizeX, _sizeY, _sizeX*_sizeY)
 	for i in range(_sizeY):
 		for j in range(_sizeX):
 			var newAspect = AspectRatioContainer.new()
