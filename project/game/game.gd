@@ -34,6 +34,8 @@ var _game_buttons = {}
 var _number_labels = {}
 var _numbered_clues = {}
 var _tips = 10
+var _anchor : String = ""
+var _target : String = ""
 
 var _clues: Dictionary = {}
 var _display: String = ""
@@ -43,6 +45,7 @@ var _pos_y : int
 
 var _allowed_keys := []
 var _special_char_dicio := {}
+var _capital_letters: Array = []
 
 var _selected_item := "0"
 var _last_selected_button
@@ -58,6 +61,8 @@ onready var _run_time: int = 0
 onready var _timer_display: Label = $AspectRatioContainer/Separador/HBoxContainer/timer
 onready var _congratulation: RichTextLabel = $PanelInformation/GlobalContainer/MarginContainer/VBoxContainer/HBoxContainer/ResultContainer/CongratulationsContainer/TotalStars
 onready var _final_time: Label = $PanelInformation/GlobalContainer/MarginContainer/VBoxContainer/HBoxContainer/ResultContainer/StatisticsContainer/TimeContainer/TotalTime
+
+onready var _test_button: Button = $AspectRatioContainer/Separador/HBoxContainer/AspectRatioContainer/ThemeButtonIcon
 
 #  [OPTIONAL_BUILT-IN_VIRTUAL_METHOD]
 #func _init() -> void:
@@ -96,69 +101,131 @@ func _ready() -> void:
 #	_verify_endgame()
 
 func _input(event):
-#	print(event)
-#	if (event is InputEventMouseButton) and event.is_pressed():
-	if (event is InputEventMouseButton) and not event.is_pressed():
-		if event.get_button_index() == BUTTON_LEFT:
-			var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
-			if dic_button.has("button"):
-				_click_selected(dic_button)
-				_last_selected_button = dic_button
-				_show_clue(_selected_item)
-	elif not (event.is_pressed()):
-		var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
-		_last_selected_button = dic_button
-		if dic_button.has("button"):
-			if (event.is_action("ui_up")):
-				_verify_selected(dic_button)
-			elif (event.is_action("ui_down")):
-				_verify_selected(dic_button)
-			elif (event.is_action("ui_left")):
-				_verify_selected(dic_button)
-			elif (event.is_action("ui_right")):
-				_verify_selected(dic_button)
-			_show_clue(_selected_item)
-#	elif event is InputEventKey and event.is_pressed():
-#		event as InputEventKey
-#		printt(event.get_scancode(), event.as_text())
-#	elif event is InputEventKey and event.is_pressed():
+	if (event is InputEventMouse):
+		event as InputEventMouse
+#		var test = _test_button.is_hovered()
+#		print(_manual_hover(_test_button, event.get_global_position()))
+		if (event.button_mask == 1):
+#			print(_anchor)
+#			if (not _anchor in _game_buttons) and _anchor == "":
+			if _anchor == "":
+				var hovered_button : String = _find_hovered_button(event.get_global_position())
+				if hovered_button in _game_buttons:
+					if _game_buttons[hovered_button]["letter"] in _capital_letters:
+						_anchor = hovered_button
+					else:
+						_anchor = "asdf"
+				else:
+					_anchor = "asdf"
+			elif _anchor in _game_buttons:
+				var hovered_button : String = _find_hovered_button(event.get_global_position())
+				if hovered_button in _game_buttons:
+					var anchor_position  : Vector2 = _game_buttons[_anchor]["position"]
+					var hovered_position : Vector2 = _game_buttons[hovered_button]["position"]
+					var direction : Vector2 = hovered_position-anchor_position
+					var angle_a : float = abs(direction.angle_to(Vector2.RIGHT))
+					var angle_b : float = abs(direction.angle_to(Vector2.DOWN))
+#					printt(anchor_position, hovered_position)
+#					printt(angle_a, angle_b)
+					var arrow_direction : Vector2
+					if angle_a <= angle_b:
+						_target = str(Vector2(hovered_position.x, anchor_position.y))
+						arrow_direction = Vector2.RIGHT
+					elif angle_b <= angle_a:
+						_target = str(Vector2(anchor_position.x, hovered_position.y))
+						arrow_direction = Vector2.DOWN
+					if _target in _game_buttons:
+						_clear_pressed()
+						_draw_arrow(_anchor, _target, arrow_direction)
+#						_game_buttons[_target]["button"].set_pressed(true)
+#					print(_target)
+#					_target = hovered_button
+#			print(_anchor)
+		elif (event.button_mask == 0):
+#			print(_solved_itens)
+			var direction : Vector2
+			var arrow_string : String = ""
+			if _anchor in _game_buttons:
+				if _game_buttons[_anchor]["position"].x == _game_buttons[_target]["position"].x:
+					direction = Vector2.DOWN
+				else:
+					direction = Vector2.RIGHT
+				arrow_string = _arrow_to_string(_anchor,_target, direction)
+			if arrow_string in _solved_itens:
+				if not (_solved_itens[arrow_string]):
+					printt(arrow_string, _solved_itens[arrow_string])
+					_solved_itens[arrow_string] = true
+					_process_clues()
+					_draw_arrow(_anchor, _target, direction, false)
+					_verify_endgame()
+					
+			_clear_pressed()
+			_anchor = ""
+#		print(_anchor)
+#		printt(event.button_mask, event)
+##	if (event is InputEventMouseButton) and event.is_pressed():
+#	if (event is InputEventMouseButton) and not event.is_pressed():
+#		if event.get_button_index() == BUTTON_LEFT:
+#			var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
+#			if dic_button.has("button"):
+#				_click_selected(dic_button)
+#				_last_selected_button = dic_button
+#				_show_clue(_selected_item)
+#	elif not (event.is_pressed()):
+#		var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
+#		_last_selected_button = dic_button
+#		if dic_button.has("button"):
+#			if (event.is_action("ui_up")):
+#				_verify_selected(dic_button)
+#			elif (event.is_action("ui_down")):
+#				_verify_selected(dic_button)
+#			elif (event.is_action("ui_left")):
+#				_verify_selected(dic_button)
+#			elif (event.is_action("ui_right")):
+#				_verify_selected(dic_button)
+#			_show_clue(_selected_item)
+##	elif event is InputEventKey and event.is_pressed():
+##		event as InputEventKey
+##		printt(event.get_scancode(), event.as_text())
+##	elif event is InputEventKey and event.is_pressed():
+##		var event_key = event as InputEventKey
+##		var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
+##		if ((event_key.get_physical_scancode() in _allowed_keys) and dic_button.has("button")):
+##			if not dic_button["button"].disabled:
+##				dic_button["value"] = char(event_key.get_scancode())
+##				dic_button["button"].text = char(event_key.get_scancode())
+##			_next_button(dic_button)
+##			_show_selected_word()
+##			_verify_solution()
+#
+##func _unhandled_input(event):
+##	print(event)
+
+func _unhandled_key_input(event):
+	pass
+##	print(event)
+##	if event is InputEventKey:
+##		print(event.is_pressed())
+#
+#	if event is InputEventKey and event.is_pressed():
 #		var event_key = event as InputEventKey
 #		var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
-#		if ((event_key.get_physical_scancode() in _allowed_keys) and dic_button.has("button")):
+#		_last_selected_button = dic_button
+##		if ((event_key.get_physical_scancode() in _allowed_keys) and dic_button.has("button")):
+#		if ((event_key.get_physical_scancode() in ALLOWED_KEYS) and dic_button.has("button")):
 #			if not dic_button["button"].disabled:
 #				dic_button["value"] = char(event_key.get_scancode())
 #				dic_button["button"].text = char(event_key.get_scancode())
-#			_next_button(dic_button)
+#			if (event_key.get_physical_scancode() == 16777220): #Backspace
+#				_previous_button(dic_button)
+#			else:
+#				_next_button(dic_button)
 #			_show_selected_word()
 #			_verify_solution()
-
-#func _unhandled_input(event):
-#	print(event)
-
-func _unhandled_key_input(event):
-#	print(event)
-#	if event is InputEventKey:
-#		print(event.is_pressed())
-		
-	if event is InputEventKey and event.is_pressed():
-		var event_key = event as InputEventKey
-		var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
-		_last_selected_button = dic_button
-#		if ((event_key.get_physical_scancode() in _allowed_keys) and dic_button.has("button")):
-		if ((event_key.get_physical_scancode() in ALLOWED_KEYS) and dic_button.has("button")):
-			if not dic_button["button"].disabled:
-				dic_button["value"] = char(event_key.get_scancode())
-				dic_button["button"].text = char(event_key.get_scancode())
-			if (event_key.get_physical_scancode() == 16777220): #Backspace
-				_previous_button(dic_button)
-			else:
-				_next_button(dic_button)
-			_show_selected_word()
-			_verify_solution()
-			_verify_endgame()
-			
-#	elif (event is InputEventAction):
-#		print(event)
+#			_verify_endgame()
+#
+##	elif (event is InputEventAction):
+##		print(event)
 			
 
 
@@ -215,7 +282,44 @@ func _override_theme() -> void:
 	box = default.get_stylebox("normal", "Label")
 	box.border_color = API.theme.get_color(API.theme.PD2)
 #	printt(default, number, clue)
-	
+
+func _manual_hover(but : Button, pos : Vector2) -> bool:
+	var rec: Rect2 = but.get_global_rect()
+	if (rec.has_point(pos)):
+		return true
+	return false
+
+func _find_hovered_button(pos : Vector2) -> String:
+	for i in _game_buttons:
+		if _manual_hover(_game_buttons[i]["button"], pos):
+			return i
+	return ""
+
+func _clear_pressed() -> void:
+	for i in _game_buttons:
+		if _game_buttons[i]["active"]:
+			_game_buttons[i]["button"].set_pressed(false)
+		else:
+			_game_buttons[i]["button"].set_pressed(true)
+
+func _draw_arrow(start: String, end: String, direction:Vector2, active:bool = true) -> void:
+	if start in _game_buttons:
+		_game_buttons[start]["button"].set_pressed(true)
+		if not (active):
+#			print("Hummm")
+			_game_buttons[start]["active"] = active
+		if not start == end:
+			var new_start : String = str(_game_buttons[start]["position"] + direction)
+			_draw_arrow(new_start, end, direction, active)
+
+func _arrow_to_string(start: String, end: String, direction:Vector2) -> String:
+	if start in _game_buttons:
+		if start == end:
+			return _game_buttons[start]["letter"]
+		else:
+			var new_start : String = str(_game_buttons[start]["position"] + direction)
+			return _game_buttons[start]["letter"] + _arrow_to_string(new_start, end, direction)
+	return "qualquercoisa"
 
 func _process_clues() -> void:
 	var words : Dictionary = API.get_words()
@@ -411,10 +515,12 @@ func _read_data() -> void:
 		
 		button.name = i
 		button.text = letter
+		button.toggle_mode = true
 		
 		_game_buttons[i] ={
 			"letter": letter,
 			"button": button,
+			"active": true,
 			"position": pos, #importante para encontrar os botoes adjacentes
 		}
 		
@@ -425,6 +531,7 @@ func _read_data() -> void:
 	
 	for i in words:
 		_solved_itens[i] = false
+		_capital_letters.append(i[0])
 	
 #	var size := Vector2.ZERO
 #	var iteration = 1
@@ -567,3 +674,7 @@ func _on_help_pressed():
 func _on_Timer_timeout():
 	_run_time += 1
 	_timer_display.text = "%02d:%02d" % [(_run_time/60) % 60, _run_time % 60]
+
+
+func _mouse_hovered():
+	print("entrou")
