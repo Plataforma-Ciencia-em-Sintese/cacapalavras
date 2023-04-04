@@ -74,6 +74,7 @@ onready var _test_button: Button = $AspectRatioContainer/Separador/HBoxContainer
 #  [BUILT-IN_VIRTUAL_METHOD]
 func _ready() -> void:
 	_override_theme()
+	_bug_show_panel_information()
 	
 #	print(_allowed_keys)
 #	print(_clueDisplay)
@@ -288,6 +289,10 @@ func _override_theme() -> void:
 	box = default.get_stylebox("normal", "Label")
 	box.border_color = API.theme.get_color(API.theme.PD2)
 #	printt(default, number, clue)
+
+func _bug_show_panel_information():
+	_panel_information.hide()
+	_show_result_button.hide()
 
 func _manual_hover(but : Button, pos : Vector2) -> bool:
 	var rec: Rect2 = but.get_global_rect()
