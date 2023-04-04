@@ -145,7 +145,7 @@ func _input(event):
 #			print(_solved_itens)
 			var direction : Vector2
 			var arrow_string : String = ""
-			if _anchor in _game_buttons:
+			if ((_anchor in _game_buttons) and (_target in _game_buttons)):
 				if _game_buttons[_anchor]["position"].x == _game_buttons[_target]["position"].x:
 					direction = Vector2.DOWN
 				else:
@@ -201,8 +201,8 @@ func _input(event):
 ##func _unhandled_input(event):
 ##	print(event)
 
-func _unhandled_key_input(event):
-	pass
+#func _unhandled_key_input(event):
+#	pass
 ##	print(event)
 ##	if event is InputEventKey:
 ##		print(event.is_pressed())
@@ -252,7 +252,7 @@ func _override_theme() -> void:
 	box.bg_color = API.theme.get_color(API.theme.PL3)
 	
 	box = table_theme.get_stylebox("pressed", "Button")
-	box.bg_color = API.theme.get_color(API.theme.PL1)
+	box.bg_color = API.theme.get_color(API.theme.SL3)
 	
 	box = table_theme.get_stylebox("hover", "Button")
 	box.bg_color = API.theme.get_color(API.theme.PB)
@@ -263,7 +263,11 @@ func _override_theme() -> void:
 	
 #	box = table_theme.get_stylebox("normal", "Table")
 	
-	table_theme.set_color("font_color", "Button", API.theme.get_color(API.theme.DARKGRAY))
+#	table_theme.set_color("font_color", "Button", API.theme.get_color(API.theme.DARKGRAY))
+	table_theme.set_color("font_color", "Button", API.theme.get_color(API.theme.PD2))
+	table_theme.set_color("font_color_focus", "Button", API.theme.get_color(API.theme.PD2))
+	table_theme.set_color("font_color_hover", "Button", API.theme.get_color(API.theme.PD2))
+	table_theme.set_color("font_color_pressed", "Button", API.theme.get_color(API.theme.PD2))
 	table_theme.set_color("font_color", "Label", API.theme.get_color(API.theme.PB))
 	
 	# number and clue
@@ -323,7 +327,7 @@ func _arrow_to_string(start: String, end: String, direction:Vector2) -> String:
 
 func _process_clues() -> void:
 	var words : Dictionary = API.get_words()
-	var display_text = ""
+	var display_text = "\n"
 	for i in words:
 #		print(words[i])
 		if _solved_itens[i]:
@@ -338,7 +342,7 @@ func _place_solved_question(entry: Dictionary, text: String) -> String:
 	var color_2: Color = API.theme.get_color(API.theme.GREEN)
 	var color_3: Color = API.theme.get_color(API.theme.BLACK)
 	color_3.a = 0.35
-	var out_entry = "[color=#%s]%s[/color]\n[b][color=#%s]%d letras[/color]\t[color=#%s]%s[/color][/b]\n\n" % [color_3.to_html(), entry["value"], color_1.to_html(), len(entry["key"]), color_2.to_html(), entry["key"]]
+	var out_entry = "[color=#%s]%s[/color]\n[b][color=#%s]%d letras[/color]\t[color=#%s]%s[/color][/b]\n" % [color_3.to_html(), entry["value"], color_1.to_html(), len(entry["key"]), color_2.to_html(), entry["key"]]
 	var output = str(text, out_entry)
 	return output
 
@@ -346,7 +350,7 @@ func _place_unsolved_question(entry: Dictionary, text: String) -> String:
 	var color_1: Color = API.theme.get_color(API.theme.PB)
 	var color_3: Color = API.theme.get_color(API.theme.BLACK)
 #	print(color_1.to_html())
-	var out_entry = "[color=#%s]%s[/color]\n[color=#%s][b]%d letras[/b][/color]\n\n" % [color_3.to_html(), entry["value"], color_1.to_html(), len(entry["key"])]
+	var out_entry = "[color=#%s]%s[/color]\n[color=#%s][b]%d letras[/b][/color]\n" % [color_3.to_html(), entry["value"], color_1.to_html(), len(entry["key"])]
 	var output = str(text, out_entry)
 	return output
 

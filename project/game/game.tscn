@@ -1,4 +1,4 @@
-[gd_scene load_steps=45 format=2]
+[gd_scene load_steps=46 format=2]
 
 [ext_resource path="res://game/game.gd" type="Script" id=1]
 [ext_resource path="res://assets/themes/default/default_color.theme" type="Theme" id=2]
@@ -26,12 +26,17 @@ extra_spacing_top = -20
 extra_spacing_bottom = -20
 font_data = ExtResource( 5 )
 
+[sub_resource type="DynamicFont" id=31]
+size = 20
+font_data = ExtResource( 5 )
+
 [sub_resource type="DynamicFont" id=4]
 size = 28
 font_data = ExtResource( 5 )
 
 [sub_resource type="DynamicFont" id=3]
 size = 20
+extra_spacing_top = -9
 font_data = ExtResource( 8 )
 
 [sub_resource type="DynamicFont" id=9]
@@ -401,13 +406,14 @@ __meta__ = {
 }
 
 [node name="Instruction" type="RichTextLabel" parent="AspectRatioContainer/Separador/Panel/ClueDisplay"]
-margin_right = 642.0
+margin_right = 641.0
 margin_bottom = 35.0
 rect_min_size = Vector2( 0, 35 )
 theme = ExtResource( 2 )
+custom_fonts/bold_font = SubResource( 31 )
 bbcode_enabled = true
-bbcode_text = "[b][color=#000000]Clique nas letras no quadrado ao lado:"
-text = "Clique nas letras no quadrado ao lado:"
+bbcode_text = "[b][color=#000000]Clique e arraste as letras no quadrado ao lado:"
+text = "Clique e arraste as letras no quadrado ao lado:"
 
 [node name="Orientation" type="RichTextLabel" parent="AspectRatioContainer/Separador/Panel/ClueDisplay"]
 visible = false
@@ -422,8 +428,8 @@ text = "Orientação"
 
 [node name="ClueContainer" type="HBoxContainer" parent="AspectRatioContainer/Separador/Panel/ClueDisplay"]
 margin_top = 39.0
-margin_right = 642.0
-margin_bottom = 826.0
+margin_right = 641.0
+margin_bottom = 825.0
 size_flags_vertical = 3
 
 [node name="Number" type="RichTextLabel" parent="AspectRatioContainer/Separador/Panel/ClueDisplay/ClueContainer"]
@@ -440,8 +446,8 @@ bbcode_text = "[b]N"
 text = "N"
 
 [node name="Clue" type="RichTextLabel" parent="AspectRatioContainer/Separador/Panel/ClueDisplay/ClueContainer"]
-margin_right = 642.0
-margin_bottom = 787.0
+margin_right = 641.0
+margin_bottom = 786.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme = ExtResource( 2 )
