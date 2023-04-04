@@ -934,6 +934,7 @@ texture = ExtResource( 10 )
 expand = true
 
 [node name="PanelInformation" type="Panel" parent="."]
+visible = false
 self_modulate = Color( 1, 1, 1, 0.611765 )
 anchor_right = 1.0
 anchor_bottom = 1.0
