@@ -934,7 +934,6 @@ texture = ExtResource( 10 )
 expand = true
 
 [node name="PanelInformation" type="Panel" parent="."]
-visible = false
 self_modulate = Color( 1, 1, 1, 0.611765 )
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -1218,3 +1217,7 @@ __meta__ = {
 [connection signal="pressed" from="AspectRatioContainer/Separador/HBoxContainer/AspectRatioContainer4/Button" to="AspectRatioContainer/Separador/Panel/Keyboard" method="_switch_visibility"]
 [connection signal="pressed" from="AspectRatioContainer/Separador/HBoxContainer/AspectRatioContainer3/ThemeButton" to="." method="_on_help_pressed"]
 [connection signal="pressed" from="gameOver/AspectRatioContainer/Panel/HBoxContainer/AspectRatioContainer3/Home" to="." method="_on_home_pressed"]
+[connection signal="pressed" from="PanelInformation/GlobalContainer/MarginContainer/VBoxContainer/ButtonsContainer/Restart" to="." method="_on_home_pressed"]
+[connection signal="pressed" from="PanelInformation/GlobalContainer/MarginContainer/VBoxContainer/ButtonsContainer/Skip" to="." method="_on_home_pressed"]
+[connection signal="pressed" from="PanelInformation/GlobalContainer/Hide" to="." method="_on_hide_result_pressed"]
+[connection signal="pressed" from="ShowPanelInformation" to="." method="_on_show_result_pressed"]

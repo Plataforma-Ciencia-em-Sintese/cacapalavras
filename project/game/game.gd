@@ -61,6 +61,8 @@ onready var _run_time: int = 0
 onready var _timer_display: Label = $AspectRatioContainer/Separador/HBoxContainer/timer
 onready var _congratulation: RichTextLabel = $PanelInformation/GlobalContainer/MarginContainer/VBoxContainer/HBoxContainer/ResultContainer/CongratulationsContainer/TotalStars
 onready var _final_time: Label = $PanelInformation/GlobalContainer/MarginContainer/VBoxContainer/HBoxContainer/ResultContainer/StatisticsContainer/TimeContainer/TotalTime
+onready var _panel_information: Panel = $PanelInformation
+onready var _show_result_button: Button = $ShowPanelInformation
 
 onready var _test_button: Button = $AspectRatioContainer/Separador/HBoxContainer/AspectRatioContainer/ThemeButtonIcon
 
@@ -377,7 +379,7 @@ func _verify_endgame() -> void:
 		endgame = endgame and _solved_itens[i]
 	if endgame:
 #		$gameOver.show()
-		$PanelInformation.show()
+		_panel_information.show()
 #		print("Jogo terminado")
 		emit_signal("game_over")
 		var score: int = _score(_run_time)
@@ -682,3 +684,13 @@ func _on_Timer_timeout():
 
 func _mouse_hovered():
 	print("entrou")
+
+
+func _on_show_result_pressed():
+	_panel_information.show()
+	_show_result_button.hide()
+
+
+func _on_hide_result_pressed():
+	_panel_information.hide()
+	_show_result_button.show()
