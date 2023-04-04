@@ -108,6 +108,7 @@ func _input(event):
 		event as InputEventMouse
 #		var test = _test_button.is_hovered()
 #		print(_manual_hover(_test_button, event.get_global_position()))
+		# verifica se esta sendo segurado ou foi somente clickado
 		if (event.button_mask == 1):
 #			print(_anchor)
 #			if (not _anchor in _game_buttons) and _anchor == "":
