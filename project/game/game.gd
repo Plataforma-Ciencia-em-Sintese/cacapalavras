@@ -37,6 +37,9 @@ var _numbered_clues = {}
 var _tips = 10
 var _anchor : String = ""
 var _target : String = ""
+var _click_anchor : String = ""
+var _click_second : String = ""
+var _click_direction : Vector2 = Vector2.ZERO
 
 var _hold_click : bool = false
 var _click_time_msec : int = 0
@@ -112,9 +115,12 @@ func _input(event):
 		event as InputEventMouse
 		_anchor = _find_anchor(event)
 		var q_click = _quick_click(event)
+		var button_clicked = _button_clicked(event)
 #		printt("quick click", q_click, "anchor", _anchor)
-		if q_click:
+		if q_click: # caso o jogador segure
 			_input_hold_setup(event)
+		elif (event.button_mask == 1): # caso o jogador opte por clickar
+			_word_validator(button_clicked)
 		
 		
 
@@ -132,6 +138,92 @@ func _input(event):
 
 
 #  [PRIVATE_METHODS]
+
+func _find_neighbor(button : String, direction : Vector2) -> String:
+	if button in _game_buttons:
+		var pos_vect : Vector2 = _game_buttons[button]["position"] + direction
+		var pos_name : String = str(pos_vect)
+		if pos_name in _game_buttons:
+			return pos_name
+	return ""
+
+func _get_previous(button) -> String:
+	if button in _game_buttons:
+		if (_click_second == ""):
+			var top = _find_neighbor(button, Vector2.UP)
+			var left = _find_neighbor(button, Vector2.LEFT)
+			if top == _click_anchor:
+				return _click_anchor
+			elif left == _click_anchor:
+				return _click_anchor
+			else:
+				return ""
+		else:
+			var first = _game_buttons[_click_anchor]["position"]
+			var secon = _game_buttons[_click_second]["position"]
+			return _find_neighbor(button, first-secon)
+	else:
+		return ""
+
+func _does_button_aligned(button : String) -> bool:
+	var direction : Vector2 = _game_buttons[_click_second]["position"] - _game_buttons[_click_anchor]["position"]
+	var anchorvec : Vector2 = _game_buttons[_click_anchor]["position"]
+	var buttonvec : Vector2 = _game_buttons[button]["position"]
+	if direction.x == 0:
+		return anchorvec.x == buttonvec.x
+	return anchorvec.y == buttonvec.y
+
+func _find_click_row_string(button : String) -> String:
+#	var output : String = _game_buttons[button]["letter"]
+	var output : String = ""
+	var direction : Vector2 = _game_buttons[_click_anchor]["position"] - _game_buttons[_click_second]["position"]
+	var act_pos : Vector2 = _game_buttons[button]["position"] - direction
+	if _does_button_aligned(button):
+		while str(act_pos) != _click_anchor:
+			act_pos += direction
+			var act_str : String = str(act_pos)
+			if (_game_buttons[act_str]["active"] or _game_buttons[act_str]["button"].pressed):
+				output = _game_buttons[act_str]["letter"] + output
+			else:
+				return ""
+			
+		return output
+	return ""
+
+func _word_validator(button : String) -> void:
+#	printt(_click_anchor, _click_second)
+	if button in _game_buttons:
+		if (_click_anchor == ""):
+			if _game_buttons[button]["letter"] in _capital_letters:
+				_click_anchor = button
+			else:
+				_clear_pressed()
+		elif (_click_second == ""):
+			if (_get_previous(button) == _click_anchor):
+				_click_second = button
+#				print(_find_click_row_string(button))
+			else:
+				_click_anchor = ""
+				_click_second = ""
+				_clear_pressed()
+				_word_validator(button)
+		else:
+			var test_output = _find_click_row_string(button)
+#			print(test_output)
+			if (test_output == ""):
+				_click_anchor = ""
+				_click_second = ""
+				_clear_pressed()
+				_word_validator(button)
+			else:
+				if test_output in _solved_itens:
+					if not (_solved_itens[test_output]):
+						printt(test_output, _solved_itens[test_output])
+						_solved_itens[test_output] = true
+						_process_clues()
+						var direction : Vector2 = _game_buttons[_click_second]["position"] - _game_buttons[_click_anchor]["position"]
+						_draw_arrow(_click_anchor, button, direction, false)
+						_verify_endgame()
 
 # Este metodo depende dos atributos _click_time_msec, _hold_click e _force_next
 func _quick_click (event : InputEventMouse) -> bool: 
@@ -178,6 +270,12 @@ func _find_anchor (event : InputEventMouse) -> String:
 		return _anchor
 	else:
 		return ""
+
+func _button_clicked (event : InputEventMouse) -> String:
+	var hovered_button : String = _find_hovered_button(event.get_global_position())
+	if hovered_button in _game_buttons:
+		return hovered_button
+	return ""
 
 func _input_hold_setup (event : InputEventMouse) -> void:
 	if (event.button_mask == 1):
