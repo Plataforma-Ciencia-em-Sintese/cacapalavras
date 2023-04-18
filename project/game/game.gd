@@ -19,6 +19,7 @@ enum SOLVE_TARGET {
 const RATIO = 1080/840.0
 const ALLOWED_KEYS = [81, 87, 69, 82, 84, 89, 85, 73, 79, 80, 65, 83, 68, 70, 71, 72, 74, 75, 76, 90, 88, 67, 86, 66, 78, 77, 59, 16777220]
 const SPECIAL_CHAR_DICIO = {'Á': 'A', 'À': 'A', 'Ã': 'A', 'Â': 'A', 'É': 'E', 'È': 'E', 'Ẽ': 'E', 'Ê': 'E', 'Í': 'I', 'Ì': 'I', 'Ĩ': 'I', 'Î': 'I', 'Ó': 'O', 'Ò': 'O', 'Õ': 'O', 'Ô': 'O', 'Ú': 'U', 'Ù': 'U', 'Ũ': 'U', 'Û': 'U', 'Ç': 'C', 'Ñ': 'N', '': ' ', ' ': ' '}
+const HOLD_AT_LAST_MSEC = 400
 
 #  [EXPORTED_VARIABLES]
 export (NodePath) var gameTable
@@ -36,6 +37,9 @@ var _numbered_clues = {}
 var _tips = 10
 var _anchor : String = ""
 var _target : String = ""
+
+var _hold_click : bool = false
+var _click_time_msec : int = 0
 
 var _clues: Dictionary = {}
 var _display: String = ""
@@ -106,131 +110,14 @@ func _ready() -> void:
 func _input(event):
 	if (event is InputEventMouse):
 		event as InputEventMouse
-#		var test = _test_button.is_hovered()
-#		print(_manual_hover(_test_button, event.get_global_position()))
-		# verifica se esta sendo segurado ou foi somente clickado
-		if (event.button_mask == 1):
-#			print(_anchor)
-#			if (not _anchor in _game_buttons) and _anchor == "":
-			if _anchor == "":
-				var hovered_button : String = _find_hovered_button(event.get_global_position())
-				if hovered_button in _game_buttons:
-					if _game_buttons[hovered_button]["letter"] in _capital_letters:
-						_anchor = hovered_button
-					else:
-						_anchor = "asdf"
-				else:
-					_anchor = "asdf"
-			elif _anchor in _game_buttons:
-				var hovered_button : String = _find_hovered_button(event.get_global_position())
-				if hovered_button in _game_buttons:
-					var anchor_position  : Vector2 = _game_buttons[_anchor]["position"]
-					var hovered_position : Vector2 = _game_buttons[hovered_button]["position"]
-					var direction : Vector2 = hovered_position-anchor_position
-					var angle_a : float = abs(direction.angle_to(Vector2.RIGHT))
-					var angle_b : float = abs(direction.angle_to(Vector2.DOWN))
-#					printt(anchor_position, hovered_position)
-#					printt(angle_a, angle_b)
-					var arrow_direction : Vector2
-					if angle_a <= angle_b:
-						_target = str(Vector2(hovered_position.x, anchor_position.y))
-						arrow_direction = Vector2.RIGHT
-					elif angle_b <= angle_a:
-						_target = str(Vector2(anchor_position.x, hovered_position.y))
-						arrow_direction = Vector2.DOWN
-					if _target in _game_buttons:
-						_clear_pressed()
-						_draw_arrow(_anchor, _target, arrow_direction)
-#						_game_buttons[_target]["button"].set_pressed(true)
-#					print(_target)
-#					_target = hovered_button
-#			print(_anchor)
-		elif (event.button_mask == 0):
-#			print(_solved_itens)
-			var direction : Vector2
-			var arrow_string : String = ""
-			if ((_anchor in _game_buttons) and (_target in _game_buttons)):
-				if _game_buttons[_anchor]["position"].x == _game_buttons[_target]["position"].x:
-					direction = Vector2.DOWN
-				else:
-					direction = Vector2.RIGHT
-				arrow_string = _arrow_to_string(_anchor,_target, direction)
-			if arrow_string in _solved_itens:
-				if not (_solved_itens[arrow_string]):
-					printt(arrow_string, _solved_itens[arrow_string])
-					_solved_itens[arrow_string] = true
-					_process_clues()
-					_draw_arrow(_anchor, _target, direction, false)
-					_verify_endgame()
-					
-			_clear_pressed()
-			_anchor = ""
-#		print(_anchor)
-#		printt(event.button_mask, event)
-##	if (event is InputEventMouseButton) and event.is_pressed():
-#	if (event is InputEventMouseButton) and not event.is_pressed():
-#		if event.get_button_index() == BUTTON_LEFT:
-#			var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
-#			if dic_button.has("button"):
-#				_click_selected(dic_button)
-#				_last_selected_button = dic_button
-#				_show_clue(_selected_item)
-#	elif not (event.is_pressed()):
-#		var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
-#		_last_selected_button = dic_button
-#		if dic_button.has("button"):
-#			if (event.is_action("ui_up")):
-#				_verify_selected(dic_button)
-#			elif (event.is_action("ui_down")):
-#				_verify_selected(dic_button)
-#			elif (event.is_action("ui_left")):
-#				_verify_selected(dic_button)
-#			elif (event.is_action("ui_right")):
-#				_verify_selected(dic_button)
-#			_show_clue(_selected_item)
-##	elif event is InputEventKey and event.is_pressed():
-##		event as InputEventKey
-##		printt(event.get_scancode(), event.as_text())
-##	elif event is InputEventKey and event.is_pressed():
-##		var event_key = event as InputEventKey
-##		var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
-##		if ((event_key.get_physical_scancode() in _allowed_keys) and dic_button.has("button")):
-##			if not dic_button["button"].disabled:
-##				dic_button["value"] = char(event_key.get_scancode())
-##				dic_button["button"].text = char(event_key.get_scancode())
-##			_next_button(dic_button)
-##			_show_selected_word()
-##			_verify_solution()
-#
-##func _unhandled_input(event):
-##	print(event)
+		_anchor = _find_anchor(event)
+		var q_click = _quick_click(event)
+#		printt("quick click", q_click, "anchor", _anchor)
+		if q_click:
+			_input_hold_setup(event)
+		
+		
 
-#func _unhandled_key_input(event):
-#	pass
-##	print(event)
-##	if event is InputEventKey:
-##		print(event.is_pressed())
-#
-#	if event is InputEventKey and event.is_pressed():
-#		var event_key = event as InputEventKey
-#		var dic_button = _verify_owner(self.get_focus_owner()) as Dictionary
-#		_last_selected_button = dic_button
-##		if ((event_key.get_physical_scancode() in _allowed_keys) and dic_button.has("button")):
-#		if ((event_key.get_physical_scancode() in ALLOWED_KEYS) and dic_button.has("button")):
-#			if not dic_button["button"].disabled:
-#				dic_button["value"] = char(event_key.get_scancode())
-#				dic_button["button"].text = char(event_key.get_scancode())
-#			if (event_key.get_physical_scancode() == 16777220): #Backspace
-#				_previous_button(dic_button)
-#			else:
-#				_next_button(dic_button)
-#			_show_selected_word()
-#			_verify_solution()
-#			_verify_endgame()
-#
-##	elif (event is InputEventAction):
-##		print(event)
-			
 
 
 
@@ -245,6 +132,104 @@ func _input(event):
 
 
 #  [PRIVATE_METHODS]
+
+# Este metodo depende dos atributos _click_time_msec, _hold_click e _force_next
+func _quick_click (event : InputEventMouse) -> bool: 
+	var time : int = OS.get_ticks_msec()
+	if (event.button_mask == 0): # Quando o usuario solta o botao
+		if (_hold_click):
+			_hold_click = false
+			if ((time - _click_time_msec) > HOLD_AT_LAST_MSEC):
+				return true
+#			else:
+#				return false
+#		else:
+#			return false
+		return false
+		
+		
+	elif (not _hold_click and event.button_mask == 1): #Quando o usuario segura o botao
+		_click_time_msec = time
+		_hold_click = true
+		return false
+		
+		
+	else: # quando o usuario ja estava segurando o botao
+		if ((time - _click_time_msec) > HOLD_AT_LAST_MSEC):
+			return true
+		return false
+
+func _find_anchor (event : InputEventMouse) -> String:
+	if (event.button_mask == 1):
+		if _anchor == "":
+			var hovered_button : String = _find_hovered_button(event.get_global_position())
+			if hovered_button in _game_buttons:
+				if _game_buttons[hovered_button]["letter"] in _capital_letters:
+					return hovered_button
+				else:
+					return "asdf"
+			else:
+				return "asdf"
+		elif _anchor in _game_buttons:
+			return _anchor
+		else:
+			return "asdf"
+	elif _hold_click:
+		return _anchor
+	else:
+		return ""
+
+func _input_hold_setup (event : InputEventMouse) -> void:
+	if (event.button_mask == 1):
+		if _anchor == "":
+			var hovered_button : String = _find_hovered_button(event.get_global_position())
+			if hovered_button in _game_buttons:
+				if _game_buttons[hovered_button]["letter"] in _capital_letters:
+					_anchor = hovered_button
+				else:
+					_anchor = "asdf"
+			else:
+				_anchor = "asdf"
+		elif _anchor in _game_buttons:
+			var hovered_button : String = _find_hovered_button(event.get_global_position())
+			if hovered_button in _game_buttons:
+				var anchor_position  : Vector2 = _game_buttons[_anchor]["position"]
+				var hovered_position : Vector2 = _game_buttons[hovered_button]["position"]
+				var direction : Vector2 = hovered_position-anchor_position
+				var angle_a : float = abs(direction.angle_to(Vector2.RIGHT))
+				var angle_b : float = abs(direction.angle_to(Vector2.DOWN))
+#					printt(anchor_position, hovered_position)
+#					printt(angle_a, angle_b)
+				var arrow_direction : Vector2
+				if angle_a <= angle_b:
+					_target = str(Vector2(hovered_position.x, anchor_position.y))
+					arrow_direction = Vector2.RIGHT
+				elif angle_b <= angle_a:
+					_target = str(Vector2(anchor_position.x, hovered_position.y))
+					arrow_direction = Vector2.DOWN
+				if _target in _game_buttons:
+					_clear_pressed()
+					_draw_arrow(_anchor, _target, arrow_direction)
+	elif (event.button_mask == 0):
+#			print(_solved_itens)
+		var direction : Vector2
+		var arrow_string : String = ""
+		if ((_anchor in _game_buttons) and (_target in _game_buttons)):
+			if _game_buttons[_anchor]["position"].x == _game_buttons[_target]["position"].x:
+				direction = Vector2.DOWN
+			else:
+				direction = Vector2.RIGHT
+			arrow_string = _arrow_to_string(_anchor,_target, direction)
+		if arrow_string in _solved_itens:
+			if not (_solved_itens[arrow_string]):
+				printt(arrow_string, _solved_itens[arrow_string])
+				_solved_itens[arrow_string] = true
+				_process_clues()
+				_draw_arrow(_anchor, _target, direction, false)
+				_verify_endgame()
+				
+		_clear_pressed()
+		_anchor = ""
 
 func _override_theme() -> void:
 	# Game Table Theme
